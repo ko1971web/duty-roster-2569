@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบปฏิบัติงาน - Staff Duty Roster</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Mitr:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07090f;
+  --surface: #0f1623;
+  --surface2: #161e2e;
+  --surface3: #1c2740;
+  --accent: #00d4ff;
+  --accent2: #7c3aed;
+  --accent3: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --text2: #64748b;
+  --border: rgba(255,255,255,0.07);
+  --glow: 0 0 24px rgba(0,212,255,0.18);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 20% 20%,rgba(0,212,255,0.03) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(124,58,237,0.04) 0%,transparent 50%);pointer-events:none;z-index:0}
+
+/* ===== LOGIN MODAL ===== */
+#loginOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999;display:none;align-items:center;justify-content:center}
+#loginOverlay.show{display:flex}
+.login-card{background:var(--surface);border:1px solid rgba(0,212,255,0.2);border-radius:24px;padding:44px 40px;width:380px;position:relative;box-shadow:0 0 80px rgba(0,212,255,0.12),0 30px 60px rgba(0,0,0,0.5);animation:fadeUp 0.3s ease}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:24px 24px 0 0}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-icon{width:68px;height:68px;background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(124,58,237,0.2));border:1px solid rgba(0,212,255,0.3);border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:14px;box-shadow:var(--glow)}
+.login-logo h2{font-family:'Mitr',sans-serif;font-size:1.3rem;font-weight:500}
+.login-logo p{color:var(--text2);font-size:0.82rem;margin-top:4px}
+.fgroup{margin-bottom:18px}
+.fgroup label{display:block;font-size:0.82rem;color:var(--text2);margin-bottom:7px;font-weight:600;letter-spacing:0.3px}
+.fgroup input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:0.93rem;outline:none;transition:all 0.2s}
+.fgroup input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,0.08)}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--accent),#0099cc);border:none;border-radius:10px;padding:13px;color:#000;font-family:'Sarabun',sans-serif;font-size:0.98rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:6px}
+.btn-login:hover{box-shadow:var(--glow);transform:translateY(-1px)}
+.login-err{color:var(--red);font-size:0.82rem;text-align:center;margin-top:10px;display:none}
+.login-hint{text-align:center;margin-top:14px;font-size:0.75rem;color:var(--text2)}
+.btn-cancel-login{background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);padding:8px 16px;font-family:'Sarabun',sans-serif;font-size:0.85rem;cursor:pointer;width:100%;margin-top:10px;transition:all 0.2s}
+.btn-cancel-login:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ===== NAV ===== */
+nav{position:sticky;top:0;z-index:100;background:rgba(7,9,15,0.93);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:58px}
+.nav-brand{font-family:'Mitr',sans-serif;font-size:1.05rem;font-weight:500;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{padding:6px 14px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'Sarabun',sans-serif;font-size:0.88rem;cursor:pointer;transition:all 0.2s}
+.nav-tab:hover{background:var(--surface2);color:var(--text)}
+.nav-tab.active{background:var(--surface2);color:var(--accent);border:1px solid rgba(0,212,255,0.25)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.user-badge{background:var(--surface2);border:1px solid rgba(0,212,255,0.2);border-radius:20px;padding:5px 12px;font-size:0.82rem;color:var(--accent);display:flex;align-items:center;gap:5px}
+.btn-sm{padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);font-family:'Sarabun',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s}
+.btn-sm:hover{background:var(--red);border-color:var(--red);color:#fff}
+.btn-edit-mode{padding:6px 14px;border-radius:8px;border:1px solid rgba(245,158,11,0.4);background:rgba(245,158,11,0.08);color:var(--accent3);font-family:'Sarabun',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s}
+.btn-edit-mode:hover{background:rgba(245,158,11,0.18)}
+
+/* ===== MAIN ===== */
+main{max-width:1440px;margin:0 auto;padding:22px;position:relative;z-index:1}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ===== STATS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:14px;margin-bottom:26px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s}
+.stat-card:hover{transform:translateY(-2px)}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card:nth-child(1)::after{background:linear-gradient(90deg,var(--accent),transparent)}
+.stat-card:nth-child(2)::after{background:linear-gradient(90deg,var(--accent2),transparent)}
+.stat-card:nth-child(3)::after{background:linear-gradient(90deg,var(--green),transparent)}
+.stat-card:nth-child(4)::after{background:linear-gradient(90deg,var(--accent3),transparent)}
+.stat-label{font-size:0.78rem;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+.stat-val{font-size:2.2rem;font-weight:700;font-family:'Mitr',sans-serif;line-height:1}
+.stat-sub{font-size:0.75rem;color:var(--text2);margin-top:5px}
+.stat-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:2.8rem;opacity:0.07}
+
+/* ===== TODAY DUTY ===== */
+.today-section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:22px}
+.sec-title{font-family:'Mitr',sans-serif;font-size:1.05rem;font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.sec-title::before{content:'';width:3px;height:18px;background:linear-gradient(180deg,var(--accent),var(--accent2));border-radius:2px}
+.today-cards{display:flex;flex-wrap:wrap;gap:10px}
+.duty-person-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;min-width:180px}
+.person-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Mitr',sans-serif;font-size:0.85rem;flex-shrink:0}
+.person-name{font-size:0.88rem;font-weight:600;line-height:1.3}
+.person-shift{font-size:0.72rem;color:var(--text2);margin-top:2px}
+.empty-msg{color:var(--text2);font-size:0.88rem;padding:8px}
+
+/* ===== MONTHLY SCROLL BAR ===== */
+.monthly-timeline{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;margin-bottom:22px}
+.timeline-controls{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.timeline-nav-btn{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.timeline-nav-btn:hover{border-color:var(--accent);color:var(--accent)}
+.timeline-month-label{font-family:'Mitr',sans-serif;font-size:1rem;font-weight:500;min-width:180px;text-align:center}
+
+/* The horizontal scroll container */
+.timeline-scroll-wrap{overflow-x:auto;padding-bottom:8px}
+.timeline-scroll-wrap::-webkit-scrollbar{height:6px}
+.timeline-scroll-wrap::-webkit-scrollbar-track{background:var(--surface2);border-radius:3px}
+.timeline-scroll-wrap::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.3);border-radius:3px}
+.timeline-scroll-wrap::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+.timeline-inner{display:flex;gap:0;min-width:max-content}
+.tl-day-col{flex-shrink:0;width:130px;border-right:1px solid var(--border);transition:background 0.15s}
+.tl-day-col:last-child{border-right:none}
+.tl-day-col:hover{background:var(--surface3)}
+.tl-day-header{padding:8px 8px 6px;text-align:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
+.tl-day-num{font-size:1.1rem;font-weight:700;font-family:'Mitr',sans-serif;line-height:1}
+.tl-day-name{font-size:0.68rem;color:var(--text2);margin-top:2px}
+.tl-day-col.today-col .tl-day-header{background:rgba(0,212,255,0.08);border-bottom-color:rgba(0,212,255,0.4)}
+.tl-day-col.today-col .tl-day-num{color:var(--accent)}
+.tl-day-col.weekend-col .tl-day-num{color:var(--accent3)}
+.tl-day-col.weekend-col .tl-day-header{background:rgba(245,158,11,0.04)}
+.tl-day-col.holiday-col .tl-day-header{background:rgba(239,68,68,0.06)}
+.tl-holiday-badge{font-size:0.58rem;background:rgba(239,68,68,0.2);color:var(--red);border-radius:3px;padding:1px 4px;margin-top:2px;display:inline-block}
+.tl-shift-block{padding:5px 6px}
+.tl-shift-label{font-size:0.62rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:3px;display:flex;align-items:center;gap:3px}
+.tl-person-chip{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);border-radius:5px;padding:3px 6px;font-size:0.72rem;color:var(--accent);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.tl-person-chip.day-chip{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.25);color:var(--accent3)}
+.tl-empty-chip{font-size:0.68rem;color:var(--text2);opacity:0.4;padding:2px 4px}
+.tl-divider{height:1px;background:var(--border);margin:4px 0}
+.legend-row{display:flex;gap:16px;font-size:0.75rem;color:var(--text2);margin-top:12px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+
+/* ===== CALENDAR ===== */
+.calendar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;margin-bottom:22px}
+.cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.cal-nav{display:flex;align-items:center;gap:12px}
+.cal-nav button{width:34px;height:34px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.cal-nav button:hover{border-color:var(--accent);color:var(--accent)}
+.cal-month-label{font-family:'Mitr',sans-serif;font-size:1.15rem;font-weight:500;min-width:200px;text-align:center}
+.cal-legend{font-size:0.75rem;color:var(--text2);display:flex;gap:12px;flex-wrap:wrap}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-hdr{text-align:center;font-size:0.72rem;color:var(--text2);padding:7px 4px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.cal-hdr.wknd{color:var(--accent3)}
+.cal-day{background:var(--surface2);border:1px solid var(--border);border-radius:10px;min-height:105px;padding:7px 6px;cursor:pointer;transition:all 0.18s;position:relative;overflow:hidden}
+.cal-day:hover{border-color:rgba(0,212,255,0.4);background:var(--surface3)}
+.cal-day.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+.cal-day.today{border-color:var(--accent)!important;box-shadow:0 0 0 1px rgba(0,212,255,0.15),var(--glow)}
+.cal-day.weekend{border-color:rgba(245,158,11,0.18)}
+.cal-day.holiday{border-color:rgba(239,68,68,0.35);background:rgba(239,68,68,0.04)}
+.cal-day.view-only{cursor:default}
+.cal-day.view-only:hover{border-color:var(--border);background:var(--surface2)}
+.cal-day.weekend.view-only:hover{border-color:rgba(245,158,11,0.18)}
+.day-num-wrap{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:5px}
+.day-num{font-size:0.82rem;font-weight:600;color:var(--text2)}
+.today .day-num{background:var(--accent);color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.72rem}
+.holiday-tag{font-size:0.58rem;background:rgba(239,68,68,0.18);color:var(--red);border-radius:3px;padding:1px 4px}
+.shift-section{margin-bottom:3px}
+.shift-mini-label{font-size:0.58rem;color:var(--text2);font-weight:700;letter-spacing:0.3px;margin-bottom:2px}
+.name-chip{background:rgba(0,212,255,0.12);border:1px solid rgba(0,212,255,0.22);border-radius:4px;padding:2px 5px;font-size:0.66rem;color:var(--accent);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.name-chip.day-chip{background:rgba(245,158,11,0.1);border-color:rgba(245,158,11,0.25);color:var(--accent3)}
+.name-chip.editable:hover{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:var(--red);cursor:pointer}
+.more-tag{font-size:0.6rem;color:var(--text2);padding:1px 4px}
+.edit-hint{position:absolute;bottom:4px;right:5px;font-size:0.58rem;color:rgba(0,212,255,0.4)}
+
+/* ===== MODAL ===== */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:30px;width:500px;max-width:92vw;max-height:88vh;overflow-y:auto;box-shadow:0 30px 60px rgba(0,0,0,0.5),var(--glow);animation:fadeUp 0.25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px) scale(0.97)}to{opacity:1;transform:none}}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.modal-title{font-family:'Mitr',sans-serif;font-size:1.1rem;font-weight:500}
+.modal-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:1rem}
+.modal-close:hover{background:var(--red);border-color:var(--red);color:#fff}
+
+/* Shift tabs */
+.shift-tabs{display:flex;gap:8px;margin-bottom:18px}
+.shift-tab{flex:1;padding:9px 8px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Sarabun',sans-serif;font-size:0.82rem;cursor:pointer;transition:all 0.2s;text-align:center}
+.shift-tab.sn-active{border-color:var(--accent);color:var(--accent);background:rgba(0,212,255,0.08)}
+.shift-tab.sd-active{border-color:var(--accent3);color:var(--accent3);background:rgba(245,158,11,0.08)}
+.shift-time-info{background:var(--surface2);border-radius:9px;padding:9px 13px;font-size:0.8rem;color:var(--text2);margin-bottom:16px;border:1px solid var(--border)}
+.toggle-row{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--surface2);border-radius:9px;margin-bottom:14px;border:1px solid var(--border)}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-sl{position:absolute;cursor:pointer;inset:0;background:var(--surface3);border-radius:20px;transition:all 0.3s;border:1px solid var(--border)}
+.toggle-sl::before{content:'';position:absolute;width:14px;height:14px;left:2px;bottom:2px;background:var(--text2);border-radius:50%;transition:all 0.3s}
+.toggle input:checked+.toggle-sl{background:rgba(239,68,68,0.25);border-color:var(--red)}
+.toggle input:checked+.toggle-sl::before{transform:translateX(18px);background:var(--red)}
+.toggle-lbl{font-size:0.82rem;color:var(--text2)}
+.staff-in-shift{margin-bottom:14px;max-height:200px;overflow-y:auto}
+.staff-row{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;background:var(--surface2);border-radius:8px;margin-bottom:5px;border:1px solid var(--border)}
+.staff-row-name{font-size:0.88rem;font-weight:500}
+.staff-row-badge{font-size:0.72rem;padding:2px 7px;border-radius:4px}
+.night-badge{background:rgba(0,212,255,0.12);color:var(--accent)}
+.day-badge{background:rgba(245,158,11,0.12);color:var(--accent3)}
+.btn-rm{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text2);padding:3px 8px;font-size:0.72rem;cursor:pointer;transition:all 0.15s}
+.btn-rm:hover{background:var(--red);border-color:var(--red);color:#fff}
+.add-row{display:flex;gap:8px}
+.add-row select{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:0.88rem;outline:none;transition:all 0.2s}
+.add-row select:focus{border-color:var(--accent)}
+.add-row select option{background:var(--surface2)}
+.btn-add-staff{padding:9px 16px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:'Sarabun',sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.btn-add-staff:hover{box-shadow:var(--glow);transform:translateY(-1px)}
+
+/* ===== STAFF CARDS ===== */
+.staff-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-top:16px}
+.s-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;position:relative;transition:all 0.2s}
+.s-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.s-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;margin:0 auto 10px;font-family:'Mitr',sans-serif}
+.s-name{font-size:0.88rem;font-weight:600;margin-bottom:3px}
+.s-role{font-size:0.72rem;color:var(--text2)}
+.btn-del-s{position:absolute;top:7px;right:7px;width:20px;height:20px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:all 0.2s}
+.s-card:hover .btn-del-s{opacity:1}
+.btn-del-s:hover{background:var(--red);border-color:var(--red);color:#fff}
+.btn-primary{width:100%;background:linear-gradient(135deg,var(--accent),#0099cc);border:none;border-radius:10px;padding:12px;color:#000;font-family:'Sarabun',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:6px}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:var(--glow)}
+.btn-green{padding:7px 14px;background:var(--green);border:none;border-radius:8px;color:#fff;font-family:'Sarabun',sans-serif;font-size:0.83rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-green:hover{opacity:0.85}
+
+/* ===== HISTORY ===== */
+.history-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.history-filters select,.history-filters input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:0.88rem;outline:none;transition:all 0.2s}
+.history-filters select:focus,.history-filters input:focus{border-color:var(--accent)}
+.history-filters select option{background:var(--surface2)}
+.h-timeline{position:relative;padding-left:22px}
+.h-timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:1px;background:var(--border)}
+.h-item{position:relative;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:9px;transition:all 0.2s}
+.h-item::before{content:'';position:absolute;left:-18px;top:16px;width:10px;height:10px;border-radius:50%;border:2px solid var(--bg)}
+.h-item.night-item::before{background:var(--accent)}
+.h-item.day-item::before{background:var(--accent3)}
+.h-item.hol-item::before{background:var(--red)}
+.h-item:hover{border-color:var(--accent)}
+.h-date{font-size:0.78rem;color:var(--text2);margin-bottom:3px}
+.h-shift{font-size:0.82rem;color:var(--text)}
+
+/* ===== SETTINGS ===== */
+.settings-block{background:var(--surface2);border:1px solid rgba(16,185,129,0.18);border-radius:14px;padding:18px;margin-bottom:16px}
+.settings-block h4{font-size:0.88rem;color:var(--green);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.settings-block p{font-size:0.8rem;color:var(--text2);line-height:1.6;margin-bottom:8px}
+.settings-block input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Sarabun',sans-serif;font-size:0.83rem;outline:none;margin-bottom:8px}
+.settings-block input:focus{border-color:var(--green)}
+
+/* ===== SYNC BAR ===== */
+.sync-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:8px;font-size:0.78rem;color:var(--green);margin-bottom:18px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.25}}
+
+/* ===== MISC ===== */
+.empty-state{text-align:center;padding:40px;color:var(--text2);font-size:0.88rem}
+.empty-state .icon{font-size:2.8rem;margin-bottom:12px;opacity:0.25}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+@media(max-width:768px){main{padding:12px}.stats-grid{grid-template-columns:repeat(2,1fr)}.cal-day{min-height:70px}.nav-tabs{display:none}}
+
+/* read-only banner */
+.readonly-banner{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.25);border-radius:10px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px}
+.readonly-banner span{font-size:0.83rem;color:var(--accent2)}
+.btn-do-login{padding:7px 14px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:8px;color:#fff;font-family:'Sarabun',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn-do-login:hover{box-shadow:var(--glow2)}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN OVERLAY (modal over app) ===== -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-icon">🏥</div>
+      <h2>เข้าสู่ระบบแก้ไข</h2>
+      <p>กรุณายืนยันตัวตนเพื่อแก้ไขข้อมูล</p>
+    </div>
+    <div class="fgroup">
+      <label>ชื่อผู้ใช้</label>
+      <input type="text" id="loginUser" placeholder="กรอกชื่อผู้ใช้">
+    </div>
+    <div class="fgroup">
+      <label>รหัสผ่าน</label>
+      <input type="password" id="loginPass" placeholder="กรอกรหัสผ่าน">
+    </div>
+    <button class="btn-login" onclick="doLogin()">🔑 เข้าสู่ระบบ</button>
+    <button class="btn-cancel-login" onclick="cancelLogin()">ยกเลิก (ดูอย่างเดียว)</button>
+    <div class="login-err" id="loginErr">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+    <div class="login-hint">แอดมิน: admin / admin123</div>
+  </div>
+</div>
+
+<!-- ===== NAV ===== -->
+<nav>
+  <div class="nav-brand">🏥 &nbsp;ระบบปฏิบัติงานบุคลากร</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('dashboard',this)">📊 แดชบอร์ด</button>
+    <button class="nav-tab" onclick="switchTab('calendar',this)">📅 ปฏิทิน</button>
+    <button class="nav-tab" onclick="switchTab('monthly',this)">📋 ตารางรายเดือน</button>
+    <button class="nav-tab" onclick="switchTab('history',this)">🔍 ประวัติรายบุคคล</button>
+    <button class="nav-tab" onclick="switchTab('staff',this)">👥 บุคลากร</button>
+    <button class="nav-tab" onclick="switchTab('settings',this)">⚙️ ตั้งค่า</button>
+  </div>
+  <div class="nav-right">
+    <div id="userBadge" style="display:none" class="user-badge">✏️ <span id="navUser"></span></div>
+    <button id="btnEditMode" class="btn-edit-mode" onclick="openLoginOverlay()">🔐 โหมดแก้ไข</button>
+    <button id="btnLogout" class="btn-sm" style="display:none" onclick="doLogout()">ออกจากระบบ</button>
+  </div>
+</nav>
+
+<!-- ===== MAIN ===== -->
+<main>
+
+  <!-- DASHBOARD -->
+  <div class="tab-content active" id="tab-dashboard">
+    <div class="sync-bar">
+      <div class="sync-dot"></div>
+      <span>ข้อมูลบันทึกอัตโนมัติตลอดเวลา</span>
+      <span id="lastSync" style="margin-left:auto;opacity:0.7"></span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">บุคลากรทั้งหมด</div>
+        <div class="stat-val" id="stTotal" style="color:var(--accent)">0</div>
+        <div class="stat-sub">คนในระบบ</div>
+        <div class="stat-icon">👥</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ปฏิบัติงานวันนี้</div>
+        <div class="stat-val" id="stToday" style="color:var(--accent2)">0</div>
+        <div class="stat-sub">คน</div>
+        <div class="stat-icon">📌</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">เวรเดือนนี้</div>
+        <div class="stat-val" id="stMonth" style="color:var(--green)">0</div>
+        <div class="stat-sub">รายการ</div>
+        <div class="stat-icon">📅</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">วันหยุดราชการ</div>
+        <div class="stat-val" id="stHol" style="color:var(--accent3)">0</div>
+        <div class="stat-sub">วันในเดือนนี้</div>
+        <div class="stat-icon">🏖️</div>
+      </div>
+    </div>
+
+    <!-- Today duty -->
+    <div class="today-section">
+      <div class="sec-title">
+        ผู้ปฏิบัติงานวันนี้
+        <small id="todayLabel" style="font-size:0.78rem;color:var(--text2);font-family:'Sarabun',sans-serif;margin-left:4px"></small>
+      </div>
+      <div class="today-cards" id="todayCards"></div>
+    </div>
+
+    <!-- Monthly scroll timeline -->
+    <div class="monthly-timeline">
+      <div class="timeline-controls">
+        <button class="timeline-nav-btn" onclick="tlChangeMonth(-1)">◀</button>
+        <div class="timeline-month-label" id="tlMonthLabel"></div>
+        <button class="timeline-nav-btn" onclick="tlChangeMonth(1)">▶</button>
+        <small style="color:var(--text2);font-size:0.78rem;margin-left:auto">← เลื่อนซ้าย-ขวาเพื่อดูทั้งเดือน →</small>
+      </div>
+      <div class="timeline-scroll-wrap" id="tlScrollWrap">
+        <div class="timeline-inner" id="tlInner"></div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(0,212,255,0.5)"></div>🌙 เวรดึก 16:30–08:30</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,0.5)"></div>☀️ เวรเช้า 08:30–16:30</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.5)"></div>🏖️ วันหยุดราชการ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="tab-content" id="tab-calendar">
+    <div id="calReadonlyBanner" class="readonly-banner">
+      <span>👁️ โหมดดูอย่างเดียว — เข้าสู่ระบบเพื่อเพิ่ม/ลบผู้ปฏิบัติงาน</span>
+      <button class="btn-do-login" onclick="openLoginOverlay()">🔐 เข้าสู่ระบบ</button>
+    </div>
+    <div class="calendar-wrap">
+      <div class="cal-header">
+        <div class="cal-nav">
+          <button onclick="changeCalMonth(-1)">◀</button>
+          <div class="cal-month-label" id="calMonthLabel"></div>
+          <button onclick="changeCalMonth(1)">▶</button>
+        </div>
+        <div class="cal-legend">
+          <span>🌙 เวรดึก 16:30–08:30</span>
+          <span>☀️ เวรเช้า 08:30–16:30 (ส-อา/หยุด)</span>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid">
+        <div class="cal-hdr">จ</div><div class="cal-hdr">อ</div>
+        <div class="cal-hdr">พ</div><div class="cal-hdr">พฤ</div>
+        <div class="cal-hdr">ศ</div>
+        <div class="cal-hdr wknd">ส</div><div class="cal-hdr wknd">อา</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTHLY TABLE -->
+  <div class="tab-content" id="tab-monthly">
+    <div class="today-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="sec-title" style="margin:0">ตารางปฏิบัติงานรายเดือน</div>
+        <div style="display:flex;gap:8px">
+          <select id="mtMonth" onchange="renderMonthlyTable()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:'Sarabun',sans-serif;outline:none"></select>
+          <select id="mtYear" onchange="renderMonthlyTable()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-family:'Sarabun',sans-serif;outline:none"></select>
+        </div>
+      </div>
+      <div style="overflow-x:auto;padding-bottom:8px">
+        <table id="mtTable" style="border-collapse:collapse;font-size:0.78rem;min-width:100%"></table>
+      </div>
+      <div style="display:flex;gap:14px;font-size:0.75rem;color:var(--text2);margin-top:10px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:4px"><span style="background:rgba(0,212,255,0.2);color:var(--accent);border-radius:4px;padding:1px 5px;font-weight:700">น</span> เวรดึก</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="background:rgba(245,158,11,0.2);color:var(--accent3);border-radius:4px;padding:1px 5px;font-weight:700">ช</span> เวรเช้า</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="background:rgba(239,68,68,0.2);color:var(--red);border-radius:4px;padding:1px 5px;font-weight:700">ห</span> หยุดราชการ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="tab-content" id="tab-history">
+    <div class="today-section">
+      <div class="sec-title">ประวัติปฏิบัติงานรายบุคคล</div>
+      <div class="history-filters">
+        <select id="histStaff" onchange="renderHistory()">
+          <option value="">-- เลือกบุคลากร --</option>
+        </select>
+        <input type="month" id="histMonth" onchange="renderHistory()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Sarabun',sans-serif;outline:none">
+        <button class="btn-green" onclick="clearHistoryFilter()" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border)">ดูทั้งหมด</button>
+      </div>
+      <div id="histContent">
+        <div class="empty-state"><div class="icon">📋</div><div>เลือกบุคลากรเพื่อดูประวัติ</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STAFF -->
+  <div class="tab-content" id="tab-staff">
+    <div class="today-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="sec-title" style="margin:0">รายชื่อบุคลากร</div>
+        <button class="btn-add-staff" id="btnAddStaff" onclick="openAddStaffModal()" style="display:none">+ เพิ่มบุคลากร</button>
+      </div>
+      <div id="staffGrid" class="staff-grid"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="tab-content" id="tab-settings">
+    <div id="settingsLock" class="readonly-banner" style="margin-bottom:20px">
+      <span>🔒 ต้องเข้าสู่ระบบเพื่อเข้าถึงการตั้งค่า</span>
+      <button class="btn-do-login" onclick="openLoginOverlay()">🔐 เข้าสู่ระบบ</button>
+    </div>
+    <div id="settingsContent" style="display:none">
+      <div class="settings-block">
+        <h4>📊 เชื่อมต่อ Google Sheets</h4>
+        <p>กรอก Google Apps Script Web App URL เพื่อซิงค์อัตโนมัติทุกครั้งที่บันทึก</p>
+        <input id="sheetsUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+        <div style="display:flex;gap:8px">
+          <button class="btn-green" onclick="saveSheetsUrl()">💾 บันทึก</button>
+          <button class="btn-green" style="background:var(--accent2)" onclick="testSheets()">🔗 ทดสอบ</button>
+        </div>
+      </div>
+      <div class="settings-block">
+        <h4>🔐 จัดการแอดมิน</h4>
+        <p>เพิ่มหรือลบบัญชีผู้ดูแลระบบ</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="nAdminU" placeholder="ชื่อผู้ใช้" style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Sarabun',sans-serif;outline:none">
+          <input id="nAdminP" type="password" placeholder="รหัสผ่าน" style="flex:1;min-width:120px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Sarabun',sans-serif;outline:none">
+          <button class="btn-green" onclick="addAdmin()">เพิ่ม</button>
+        </div>
+        <div id="adminList" style="margin-top:12px"></div>
+      </div>
+      <div class="settings-block">
+        <h4>📤 ส่งออกข้อมูล</h4>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-green" onclick="exportJSON()">📥 Export JSON</button>
+          <button class="btn-green" onclick="exportCSV()">📥 Export CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- DAY EDIT MODAL -->
+<div class="modal-bg" id="dayModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title" id="dayModalTitle"></div>
+      <button class="modal-close" onclick="closeDayModal()">✕</button>
+    </div>
+    <div class="toggle-row">
+      <label class="toggle">
+        <input type="checkbox" id="holToggle" onchange="toggleHoliday()">
+        <span class="toggle-sl"></span>
+      </label>
+      <span class="toggle-lbl">🏖️ วันหยุดราชการ (เปิดเพื่อเพิ่มเวรได้ทุกช่วง)</span>
+    </div>
+    <div class="shift-tabs">
+      <div class="shift-tab sn-active" id="stNight" onclick="selShift('night')">🌙 เวรดึก</div>
+      <div class="shift-tab" id="stDay" onclick="selShift('day')">☀️ เวรเช้า</div>
+    </div>
+    <div class="shift-time-info" id="shiftTimeInfo">🕐 16:30 น. — 08:30 น. วันรุ่งขึ้น</div>
+    <div class="staff-in-shift" id="shiftStaffList"></div>
+    <div class="add-row">
+      <select id="addStaffSel">
+        <option value="">-- เลือกบุคลากร --</option>
+      </select>
+      <button class="btn-add-staff" onclick="addStaffToShift()">+ เพิ่ม</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD STAFF MODAL -->
+<div class="modal-bg" id="addStaffModal">
+  <div class="modal" style="width:360px">
+    <div class="modal-hdr">
+      <div class="modal-title">+ เพิ่มบุคลากร</div>
+      <button class="modal-close" onclick="closeAddStaffModal()">✕</button>
+    </div>
+    <div class="fgroup">
+      <label>ชื่อ-นามสกุล</label>
+      <input type="text" id="nStaffName" placeholder="เช่น นายสมชาย ใจดี">
+    </div>
+    <div class="fgroup">
+      <label>ตำแหน่ง</label>
+      <input type="text" id="nStaffRole" placeholder="เช่น พยาบาลวิชาชีพ">
+    </div>
+    <button class="btn-primary" onclick="saveNewStaff()">💾 บันทึก</button>
+  </div>
+</div>
+
+<script>
+// =========================================================
+// STATE
+// =========================================================
+const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const DOWS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const COLORS = ['#00d4ff','#7c3aed','#10b981','#f59e0b','#ef4444','#ec4899','#06b6d4','#84cc16','#f97316','#a855f7'];
+
+let S = {
+  staffList: [],
+  duties: {},    // dateKey: { night:[], day:[] }
+  holidays: {},  // dateKey: true
+  admins: [{ user:'admin', pass:'admin123' }],
+  sheetsUrl: '',
+  currentUser: null
+};
+
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let tlYear = new Date().getFullYear();
+let tlMonth = new Date().getMonth();
+let selDate = null;
+let selShiftMode = 'night';
+let isAdmin = false;
+
+// =========================================================
+// PERSIST
+// =========================================================
+function save() {
+  try { localStorage.setItem('_duty_v3', JSON.stringify(S)); } catch(e){}
+  const el = document.getElementById('lastSync');
+  if(el) el.textContent = 'บันทึกล่าสุด: ' + new Date().toLocaleTimeString('th-TH');
+  if(S.sheetsUrl) pushToSheets();
+}
+function load() {
+  try {
+    const d = localStorage.getItem('_duty_v3');
+    if(d){ const p = JSON.parse(d); S = {...S, ...p}; }
+  } catch(e){}
+}
+
+async function pushToSheets() {
+  try {
+    await fetch(S.sheetsUrl + '?action=sync', {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ duties: S.duties, staffList: S.staffList, ts: new Date().toISOString() })
+    });
+  } catch(e){}
+}
+
+function saveSheetsUrl() { S.sheetsUrl = document.getElementById('sheetsUrl').value; save(); alert('บันทึก URL แล้ว'); }
+function testSheets() {
+  if(!S.sheetsUrl){ alert('กรุณากรอก URL ก่อน'); return; }
+  fetch(S.sheetsUrl+'?action=ping',{mode:'no-cors'}).then(()=>alert('✅ เชื่อมต่อสำเร็จ')).catch(()=>alert('❌ เชื่อมต่อไม่ได้'));
+}
+
+// =========================================================
+// AUTH
+// =========================================================
+function openLoginOverlay() {
+  document.getElementById('loginOverlay').classList.add('show');
+  document.getElementById('loginErr').style.display = 'none';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  setTimeout(()=>document.getElementById('loginUser').focus(),100);
+}
+
+function cancelLogin() {
+  document.getElementById('loginOverlay').classList.remove('show');
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const admin = S.admins.find(a => a.user===u && a.pass===p);
+  if(admin){
+    S.currentUser = u; isAdmin = true; save();
+    document.getElementById('loginOverlay').classList.remove('show');
+    applyAdminUI();
+    renderAll();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+  }
+}
+
+function doLogout() {
+  S.currentUser = null; isAdmin = false; save();
+  applyAdminUI();
+  renderAll();
+}
+
+function applyAdminUI() {
+  const loggedIn = isAdmin;
+  document.getElementById('userBadge').style.display = loggedIn ? 'flex' : 'none';
+  document.getElementById('navUser').textContent = S.currentUser || '';
+  document.getElementById('btnEditMode').style.display = loggedIn ? 'none' : 'flex';
+  document.getElementById('btnLogout').style.display = loggedIn ? 'flex' : 'none';
+  // Readonly banners
+  document.getElementById('calReadonlyBanner').style.display = loggedIn ? 'none' : 'flex';
+  document.getElementById('settingsLock').style.display = loggedIn ? 'none' : 'flex';
+  document.getElementById('settingsContent').style.display = loggedIn ? 'block' : 'none';
+  document.getElementById('btnAddStaff').style.display = loggedIn ? 'flex' : 'none';
+}
+
+// keyboard enter on login
+document.getElementById('loginPass').addEventListener('keypress', e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('loginUser').addEventListener('keypress', e=>{ if(e.key==='Enter') document.getElementById('loginPass').focus(); });
+
+// =========================================================
+// TABS
+// =========================================================
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(el) el.classList.add('active');
+  if(tab==='monthly') renderMonthlyTable();
+  if(tab==='history') renderHistory();
+  if(tab==='staff') renderStaffGrid();
+  if(tab==='calendar') renderCalendar();
+  if(tab==='settings'){ document.getElementById('sheetsUrl').value=S.sheetsUrl||''; renderAdminList(); }
+}
+
+// =========================================================
+// UTILS
+// =========================================================
+function fmtDate(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function isWeekend(dateKey) { const d=new Date(dateKey); return d.getDay()===0||d.getDay()===6; }
+function isHoliday(dateKey) { return !!S.holidays[dateKey]; }
+function canAddDay(dateKey) { return isWeekend(dateKey)||isHoliday(dateKey); }
+
+// =========================================================
+// RENDER ALL
+// =========================================================
+function renderAll() {
+  renderDashboard();
+  renderTimeline();
+  renderCalendar();
+  renderStaffGrid();
+  populateDropdowns();
+}
+
+// =========================================================
+// DASHBOARD
+// =========================================================
+function renderDashboard() {
+  document.getElementById('stTotal').textContent = S.staffList.length;
+  const now = new Date();
+  const todayKey = fmtDate(now.getFullYear(), now.getMonth(), now.getDate());
+  const td = S.duties[todayKey]||{night:[],day:[]};
+  const todayAll = [...new Set([...(td.night||[]),...(td.day||[])])];
+  document.getElementById('stToday').textContent = todayAll.length;
+
+  const yr=now.getFullYear(), mo=now.getMonth();
+  const dim = new Date(yr,mo+1,0).getDate();
+  let mTotal=0, hCount=0;
+  for(let d=1;d<=dim;d++){
+    const k=fmtDate(yr,mo,d);
+    const dt=S.duties[k];
+    if(dt) mTotal += (dt.night||[]).length + (dt.day||[]).length;
+    if(S.holidays[k]) hCount++;
+  }
+  document.getElementById('stMonth').textContent = mTotal;
+  document.getElementById('stHol').textContent = hCount;
+
+  document.getElementById('todayLabel').textContent =
+    `${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()+543}`;
+
+  // Today cards
+  const tc = document.getElementById('todayCards');
+  if(todayAll.length===0){
+    tc.innerHTML = '<div class="empty-msg">ไม่มีผู้ปฏิบัติงานที่บันทึกไว้วันนี้</div>';
+  } else {
+    tc.innerHTML = todayAll.map(name => {
+      const s = S.staffList.find(x=>x.name===name);
+      const col = s?s.color:'#00d4ff';
+      const init = s?s.initial:name.slice(0,2);
+      const isDay = (td.day||[]).includes(name);
+      return `<div class="duty-person-card">
+        <div class="person-avatar" style="background:${col}20;color:${col}">${init}</div>
+        <div>
+          <div class="person-name">${name}</div>
+          <div class="person-shift">${isDay?'☀️ 08:30–16:30':'🌙 16:30–08:30'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// =========================================================
+// TIMELINE (Dashboard monthly scroll)
+// =========================================================
+function tlChangeMonth(dir) {
+  tlMonth += dir;
+  if(tlMonth<0){ tlMonth=11; tlYear--; }
+  if(tlMonth>11){ tlMonth=0; tlYear++; }
+  renderTimeline();
+}
+
+function renderTimeline() {
+  document.getElementById('tlMonthLabel').textContent = `${MONTHS[tlMonth]} ${tlYear+543}`;
+  const dim = new Date(tlYear, tlMonth+1, 0).getDate();
+  const now = new Date();
+  const inner = document.getElementById('tlInner');
+  inner.innerHTML = '';
+
+  for(let d=1; d<=dim; d++){
+    const dateKey = fmtDate(tlYear, tlMonth, d);
+    const date = new Date(tlYear, tlMonth, d);
+    const dow = date.getDay();
+    const isWknd = dow===0||dow===6;
+    const isHol = S.holidays[dateKey];
+    const isToday = (d===now.getDate() && tlMonth===now.getMonth() && tlYear===now.getFullYear());
+    const duty = S.duties[dateKey]||{night:[],day:[]};
+    const nightPeople = duty.night||[];
+    const dayPeople = duty.day||[];
+
+    let cls = 'tl-day-col';
+    if(isToday) cls += ' today-col';
+    else if(isHol) cls += ' holiday-col';
+    else if(isWknd) cls += ' weekend-col';
+
+    const col = document.createElement('div');
+    col.className = cls;
+
+    let headerHtml = `<div class="tl-day-header">
+      <div class="tl-day-num">${d}</div>
+      <div class="tl-day-name">${DOWS[dow]}</div>
+      ${isHol ? '<span class="tl-holiday-badge">🏖️ หยุด</span>' : ''}
+    </div>`;
+
+    // Night shift block
+    let nightHtml = `<div class="tl-shift-block">
+      <div class="tl-shift-label">🌙 เวรดึก</div>`;
+    if(nightPeople.length===0){
+      nightHtml += `<div class="tl-empty-chip">ว่าง</div>`;
+    } else {
+      nightPeople.forEach(n => {
+        nightHtml += `<div class="tl-person-chip" title="${n}">${n}</div>`;
+      });
+    }
+    nightHtml += '</div>';
+
+    // Day shift block (only for weekend/holiday)
+    let dayHtml = '';
+    if(isWknd || isHol){
+      dayHtml = `<div class="tl-divider"></div><div class="tl-shift-block">
+        <div class="tl-shift-label">☀️ เวรเช้า</div>`;
+      if(dayPeople.length===0){
+        dayHtml += `<div class="tl-empty-chip">ว่าง</div>`;
+      } else {
+        dayPeople.forEach(n => {
+          dayHtml += `<div class="tl-person-chip day-chip" title="${n}">${n}</div>`;
+        });
+      }
+      dayHtml += '</div>';
+    }
+
+    col.innerHTML = headerHtml + nightHtml + dayHtml;
+    inner.appendChild(col);
+  }
+
+  // Auto-scroll to today if same month
+  if(tlMonth===now.getMonth() && tlYear===now.getFullYear()){
+    requestAnimationFrame(()=>{
+      const todayIdx = now.getDate()-1;
+      const colW = 130+1;
+      const wrap = document.getElementById('tlScrollWrap');
+      const scrollTo = todayIdx * colW - wrap.clientWidth/2 + colW/2;
+      wrap.scrollLeft = Math.max(0, scrollTo);
+    });
+  }
+}
+
+// =========================================================
+// CALENDAR
+// =========================================================
+function changeCalMonth(dir) {
+  calMonth += dir;
+  if(calMonth<0){ calMonth=11; calYear--; }
+  if(calMonth>11){ calMonth=0; calYear++; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  document.getElementById('calMonthLabel').textContent = `${MONTHS[calMonth]} ${calYear+543}`;
+  const grid = document.getElementById('calGrid');
+  // Remove old day cells
+  const hdrs = [...grid.querySelectorAll('.cal-hdr')];
+  grid.innerHTML = '';
+  hdrs.forEach(h=>grid.appendChild(h));
+
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  const startOffset = firstDow===0 ? 6 : firstDow-1;
+  const dim = new Date(calYear, calMonth+1, 0).getDate();
+  const now = new Date();
+
+  for(let i=0; i<startOffset; i++){
+    const b = document.createElement('div');
+    b.className='cal-day empty'; grid.appendChild(b);
+  }
+
+  for(let d=1; d<=dim; d++){
+    const dateKey = fmtDate(calYear, calMonth, d);
+    const date = new Date(calYear, calMonth, d);
+    const dow = date.getDay();
+    const isWknd = dow===0||dow===6;
+    const isHol = S.holidays[dateKey];
+    const isToday = (d===now.getDate() && calMonth===now.getMonth() && calYear===now.getFullYear());
+    const duty = S.duties[dateKey]||{night:[],day:[]};
+    const nightP = duty.night||[];
+    const dayP = duty.day||[];
+
+    let cls = 'cal-day';
+    if(isToday) cls += ' today';
+    if(isWknd) cls += ' weekend';
+    if(isHol) cls += ' holiday';
+    if(!isAdmin) cls += ' view-only';
+
+    const cell = document.createElement('div');
+    cell.className = cls;
+    if(isAdmin) cell.onclick = ()=> openDayModal(dateKey, d, dow);
+
+    const dayNumHtml = isToday
+      ? `<span class="day-num" style="background:var(--accent);color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem">${d}</span>`
+      : `<span class="day-num">${d}</span>`;
+
+    const holTag = isHol ? `<span class="holiday-tag">🏖️</span>` : '';
+
+    // Night people
+    let nightHtml = '';
+    if(nightP.length>0){
+      nightHtml = `<div class="shift-section"><div class="shift-mini-label">🌙</div>`;
+      const show = nightP.slice(0,3);
+      show.forEach(n=>{
+        const eClass = isAdmin ? ' editable' : '';
+        nightHtml += `<div class="name-chip${eClass}" title="${n}${isAdmin?' — คลิกเพื่อลบ':''}"
+          ${isAdmin ? `onclick="event.stopPropagation();quickRemove('${dateKey}','${n}','night')"` : ''}>
+          ${n}
+        </div>`;
+      });
+      if(nightP.length>3) nightHtml += `<div class="more-tag">+${nightP.length-3} คน</div>`;
+      nightHtml += '</div>';
+    }
+
+    // Day people
+    let dayHtml = '';
+    if(dayP.length>0 && (isWknd||isHol)){
+      dayHtml = `<div class="shift-section"><div class="shift-mini-label">☀️</div>`;
+      const show = dayP.slice(0,3);
+      show.forEach(n=>{
+        const eClass = isAdmin ? ' editable' : '';
+        dayHtml += `<div class="name-chip day-chip${eClass}" title="${n}${isAdmin?' — คลิกเพื่อลบ':''}"
+          ${isAdmin ? `onclick="event.stopPropagation();quickRemove('${dateKey}','${n}','day')"` : ''}>
+          ${n}
+        </div>`;
+      });
+      if(dayP.length>3) dayHtml += `<div class="more-tag">+${dayP.length-3} คน</div>`;
+      dayHtml += '</div>';
+    }
+
+    const editHint = isAdmin ? `<span class="edit-hint">✏️</span>` : '';
+
+    cell.innerHTML = `<div class="day-num-wrap">${dayNumHtml}${holTag}</div>${nightHtml}${dayHtml}${editHint}`;
+    grid.appendChild(cell);
+  }
+}
+
+function quickRemove(dateKey, name, shift) {
+  if(!isAdmin) return;
+  if(!confirm(`ลบ "${name}" ออกจากเวรนี้?`)) return;
+  if(S.duties[dateKey] && S.duties[dateKey][shift]){
+    S.duties[dateKey][shift] = S.duties[dateKey][shift].filter(n=>n!==name);
+  }
+  save(); renderCalendar(); renderDashboard(); renderTimeline();
+}
+
+// =========================================================
+// DAY MODAL
+// =========================================================
+function openDayModal(dateKey, dayNum, dow) {
+  if(!isAdmin){ openLoginOverlay(); return; }
+  selDate = dateKey;
+  selShiftMode = 'night';
+  const [y,m,d] = dateKey.split('-');
+  document.getElementById('dayModalTitle').textContent =
+    `📅 ${parseInt(d)} ${MONTHS[parseInt(m)-1]} ${parseInt(y)+543} (${DOWS[dow]})`;
+  document.getElementById('holToggle').checked = !!S.holidays[dateKey];
+  updateShiftTabsState(dow);
+  renderShiftList();
+  populateDropdowns();
+  document.getElementById('dayModal').classList.add('show');
+}
+function closeDayModal(){ document.getElementById('dayModal').classList.remove('show'); }
+
+function updateShiftTabsState(dow) {
+  const isWknd = dow===0||dow===6;
+  const isHol = S.holidays[selDate];
+  const canDay = isWknd||isHol;
+  const stDay = document.getElementById('stDay');
+  stDay.style.opacity = canDay?'1':'0.4';
+  stDay.style.pointerEvents = canDay?'auto':'none';
+  selShift('night');
+}
+
+function selShift(sh) {
+  selShiftMode = sh;
+  document.getElementById('stNight').className = 'shift-tab' + (sh==='night'?' sn-active':'');
+  document.getElementById('stDay').className = 'shift-tab' + (sh==='day'?' sd-active':'');
+  const info = document.getElementById('shiftTimeInfo');
+  info.textContent = sh==='night' ? '🌙 เวลา 16:30 น. — 08:30 น. วันรุ่งขึ้น' : '☀️ เวลา 08:30 น. — 16:30 น.';
+  info.style.borderColor = sh==='night' ? 'rgba(0,212,255,0.2)' : 'rgba(245,158,11,0.2)';
+  renderShiftList();
+}
+
+function toggleHoliday() {
+  const checked = document.getElementById('holToggle').checked;
+  if(checked) S.holidays[selDate]=true;
+  else delete S.holidays[selDate];
+  const date = new Date(selDate);
+  updateShiftTabsState(date.getDay());
+  save(); renderCalendar(); renderDashboard(); renderTimeline();
+}
+
+function renderShiftList() {
+  const duty = S.duties[selDate]||{night:[],day:[]};
+  const list = duty[selShiftMode]||[];
+  const cont = document.getElementById('shiftStaffList');
+  if(list.length===0){
+    cont.innerHTML = '<div style="text-align:center;color:var(--text2);padding:14px;font-size:0.83rem">ยังไม่มีผู้ปฏิบัติงานในเวรนี้</div>';
+    return;
+  }
+  cont.innerHTML = list.map(name => `
+    <div class="staff-row">
+      <span class="staff-row-name">👤 ${name}</span>
+      <span class="staff-row-badge ${selShiftMode==='night'?'night-badge':'day-badge'}">
+        ${selShiftMode==='night'?'🌙 เวรดึก':'☀️ เวรเช้า'}
+      </span>
+      <button class="btn-rm" onclick="rmStaffShift('${name}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function addStaffToShift() {
+  const name = document.getElementById('addStaffSel').value;
+  if(!name) return;
+  if(!S.duties[selDate]) S.duties[selDate]={night:[],day:[]};
+  if(!S.duties[selDate][selShiftMode]) S.duties[selDate][selShiftMode]=[];
+  if(S.duties[selDate][selShiftMode].includes(name)){ alert('บุคลากรนี้อยู่ในเวรนี้แล้ว'); return; }
+  S.duties[selDate][selShiftMode].push(name);
+  document.getElementById('addStaffSel').value='';
+  save(); renderShiftList(); renderCalendar(); renderDashboard(); renderTimeline();
+}
+
+function rmStaffShift(name) {
+  if(!S.duties[selDate]) return;
+  S.duties[selDate][selShiftMode] = (S.duties[selDate][selShiftMode]||[]).filter(n=>n!==name);
+  save(); renderShiftList(); renderCalendar(); renderDashboard(); renderTimeline();
+}
+
+// =========================================================
+// MONTHLY TABLE
+// =========================================================
+function initMonthlySelects() {
+  const mSel=document.getElementById('mtMonth');
+  const ySel=document.getElementById('mtYear');
+  mSel.innerHTML = MONTHS.map((m,i)=>`<option value="${i}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('');
+  const yr=new Date().getFullYear();
+  ySel.innerHTML = [yr-1,yr,yr+1].map(y=>`<option value="${y}" ${y===yr?'selected':''}>${y+543}</option>`).join('');
+}
+
+function renderMonthlyTable() {
+  const m=parseInt(document.getElementById('mtMonth').value);
+  const y=parseInt(document.getElementById('mtYear').value);
+  const dim=new Date(y,m+1,0).getDate();
+  const now=new Date();
+  const tbl=document.getElementById('mtTable');
+
+  let h='<thead><tr><th style="background:var(--surface2);border:1px solid var(--border);padding:8px 12px;text-align:left;position:sticky;left:0;z-index:2;white-space:nowrap;min-width:130px;color:var(--text2);font-size:0.78rem">บุคลากร</th>';
+  for(let d=1;d<=dim;d++){
+    const dk=fmtDate(y,m,d);
+    const date=new Date(y,m,d);
+    const dow=date.getDay();
+    const isWknd=dow===0||dow===6;
+    const isHol=S.holidays[dk];
+    const isToday=(d===now.getDate()&&m===now.getMonth()&&y===now.getFullYear());
+    let bg='background:var(--surface2)';
+    let col='color:var(--text2)';
+    if(isToday){bg='background:rgba(0,212,255,0.1)';col='color:var(--accent)'}
+    else if(isWknd||isHol){bg='background:rgba(245,158,11,0.05)';col='color:var(--accent3)'}
+    h+=`<th style="${bg};${col};border:1px solid var(--border);padding:5px 6px;text-align:center;min-width:36px;font-size:0.75rem">${d}<br><span style="font-weight:400;font-size:0.65rem">${DOWS[dow]}</span></th>`;
+  }
+  h+='</tr></thead>';
+
+  let b='<tbody>';
+  if(S.staffList.length===0){
+    b+=`<tr><td colspan="${dim+1}" style="text-align:center;color:var(--text2);padding:24px;border:1px solid var(--border)">ยังไม่มีบุคลากร</td></tr>`;
+  } else {
+    S.staffList.forEach(staff=>{
+      b+=`<tr><td style="background:var(--surface);border:1px solid var(--border);padding:8px 12px;position:sticky;left:0;z-index:1;font-weight:500;font-size:0.82rem;white-space:nowrap">👤 ${staff.name}</td>`;
+      for(let d=1;d<=dim;d++){
+        const dk=fmtDate(y,m,d);
+        const duty=S.duties[dk]||{night:[],day:[]};
+        const inN=(duty.night||[]).includes(staff.name);
+        const inD=(duty.day||[]).includes(staff.name);
+        const isHol=S.holidays[dk];
+        let cell='';
+        if(inN) cell=`<div style="background:rgba(0,212,255,0.15);color:var(--accent);border-radius:4px;padding:2px 4px;font-size:0.68rem;font-weight:700;display:inline-block">น</div>`;
+        else if(inD) cell=`<div style="background:rgba(245,158,11,0.15);color:var(--accent3);border-radius:4px;padding:2px 4px;font-size:0.68rem;font-weight:700;display:inline-block">ช</div>`;
+        b+=`<td style="border:1px solid var(--border);text-align:center;padding:4px">${cell}</td>`;
+      }
+      b+='</tr>';
+    });
+  }
+  b+='</tbody>';
+  tbl.innerHTML=h+b;
+}
+
+// =========================================================
+// HISTORY
+// =========================================================
+function clearHistoryFilter(){
+  document.getElementById('histMonth').value='';
+  renderHistory();
+}
+
+function renderHistory() {
+  const name=document.getElementById('histStaff').value;
+  const mo=document.getElementById('histMonth').value;
+  const cont=document.getElementById('histContent');
+  if(!name){
+    cont.innerHTML='<div class="empty-state"><div class="icon">📋</div><div>เลือกบุคลากรเพื่อดูประวัติ</div></div>';
+    return;
+  }
+  let entries=[];
+  Object.keys(S.duties).forEach(dk=>{
+    if(mo && !dk.startsWith(mo)) return;
+    const duty=S.duties[dk];
+    const isHol=S.holidays[dk];
+    if((duty.night||[]).includes(name)) entries.push({date:dk,shift:'night',hol:isHol});
+    if((duty.day||[]).includes(name)) entries.push({date:dk,shift:'day',hol:isHol});
+  });
+  entries.sort((a,b)=>a.date.localeCompare(b.date));
+
+  if(entries.length===0){
+    cont.innerHTML='<div class="empty-state"><div class="icon">🗓️</div><div>ไม่พบประวัติในช่วงเวลานี้</div></div>';
+    return;
+  }
+
+  const s=S.staffList.find(x=>x.name===name);
+  const col=s?s.color:'#00d4ff';
+  const init=s?s.initial:name.slice(0,2);
+
+  cont.innerHTML=`
+    <div style="background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:14px;border:1px solid ${col}25">
+      <div style="width:46px;height:46px;border-radius:50%;background:${col}18;color:${col};display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;font-family:'Mitr',sans-serif;flex-shrink:0">${init}</div>
+      <div>
+        <div style="font-size:1rem;font-weight:600">${name}</div>
+        <div style="color:var(--text2);font-size:0.8rem">${s?s.role:''} &nbsp;|&nbsp; ปฏิบัติงานทั้งหมด: <strong style="color:${col}">${entries.length} ครั้ง</strong></div>
+      </div>
+    </div>
+    <div class="h-timeline">
+      ${entries.map(e=>{
+        const [ey,em,ed]=e.date.split('-');
+        const dobj=new Date(e.date);
+        const dateStr=`${parseInt(ed)} ${MONTHS[parseInt(em)-1]} ${parseInt(ey)+543} (${DOWS[dobj.getDay()]})`;
+        const shiftLbl=e.shift==='night'?'🌙 เวรดึก 16:30 — 08:30 น. วันรุ่งขึ้น':'☀️ เวรเช้า 08:30 — 16:30 น.';
+        const cls='h-item '+(e.hol?'hol-item':e.shift==='day'?'day-item':'night-item');
+        const holBadge=e.hol?'<span style="background:rgba(239,68,68,0.12);color:var(--red);border-radius:4px;padding:1px 6px;font-size:0.7rem;margin-left:6px">🏖️ วันหยุด</span>':'';
+        return `<div class="${cls}">
+          <div class="h-date">${dateStr}${holBadge}</div>
+          <div class="h-shift">${shiftLbl}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// =========================================================
+// STAFF MANAGEMENT
+// =========================================================
+function openAddStaffModal() {
+  if(!isAdmin){ openLoginOverlay(); return; }
+  document.getElementById('addStaffModal').classList.add('show');
+}
+function closeAddStaffModal(){ document.getElementById('addStaffModal').classList.remove('show'); }
+
+function saveNewStaff() {
+  const name=document.getElementById('nStaffName').value.trim();
+  const role=document.getElementById('nStaffRole').value.trim();
+  if(!name){ alert('กรุณากรอกชื่อ'); return; }
+  if(S.staffList.find(s=>s.name===name)){ alert('มีชื่อนี้ในระบบแล้ว'); return; }
+  const col=COLORS[S.staffList.length%COLORS.length];
+  const init=name.replace(/^(นาย|นาง|นางสาว|ดร\.|นพ\.|พญ\.)\s*/,'').slice(0,2);
+  S.staffList.push({name,role:role||'บุคลากร',color:col,initial:init});
+  save(); renderStaffGrid(); populateDropdowns(); closeAddStaffModal();
+  document.getElementById('nStaffName').value='';
+  document.getElementById('nStaffRole').value='';
+  renderDashboard();
+}
+
+function deleteStaff(name) {
+  if(!isAdmin) return;
+  if(!confirm(`ลบ "${name}" ออกจากระบบ?`)) return;
+  S.staffList=S.staffList.filter(s=>s.name!==name);
+  Object.keys(S.duties).forEach(dk=>{
+    if(S.duties[dk].night) S.duties[dk].night=S.duties[dk].night.filter(n=>n!==name);
+    if(S.duties[dk].day) S.duties[dk].day=S.duties[dk].day.filter(n=>n!==name);
+  });
+  save(); renderStaffGrid(); populateDropdowns(); renderAll();
+}
+
+function renderStaffGrid() {
+  const g=document.getElementById('staffGrid');
+  if(S.staffList.length===0){
+    g.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">👤</div><div>ยังไม่มีบุคลากร</div></div>';
+    return;
+  }
+  g.innerHTML=S.staffList.map(s=>`
+    <div class="s-card">
+      <div class="s-avatar" style="background:${s.color}18;color:${s.color}">${s.initial}</div>
+      <div class="s-name">${s.name}</div>
+      <div class="s-role">${s.role}</div>
+      ${isAdmin?`<button class="btn-del-s" onclick="deleteStaff('${s.name}')">✕</button>`:''}
+    </div>
+  `).join('');
+}
+
+function populateDropdowns() {
+  const opts='<option value="">-- เลือกบุคลากร --</option>'+
+    S.staffList.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
+  document.getElementById('addStaffSel').innerHTML=opts;
+  document.getElementById('histStaff').innerHTML=opts;
+}
+
+// =========================================================
+// ADMIN MANAGEMENT
+// =========================================================
+function addAdmin() {
+  const u=document.getElementById('nAdminU').value.trim();
+  const p=document.getElementById('nAdminP').value;
+  if(!u||!p){alert('กรุณากรอกข้อมูลให้ครบ');return;}
+  if(S.admins.find(a=>a.user===u)){alert('มีชื่อผู้ใช้นี้แล้ว');return;}
+  S.admins.push({user:u,pass:p}); save(); renderAdminList();
+  document.getElementById('nAdminU').value='';
+  document.getElementById('nAdminP').value='';
+}
+function removeAdmin(u) {
+  if(u==='admin'){alert('ไม่สามารถลบแอดมินหลักได้');return;}
+  S.admins=S.admins.filter(a=>a.user!==u); save(); renderAdminList();
+}
+function renderAdminList() {
+  document.getElementById('adminList').innerHTML=S.admins.map(a=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border-radius:8px;margin-bottom:6px;border:1px solid var(--border)">
+      <span style="font-size:0.88rem">👤 ${a.user} ${a.user===S.currentUser?'<span style="font-size:0.72rem;color:var(--accent)">(คุณ)</span>':''}</span>
+      <button onclick="removeAdmin('${a.user}')" style="background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text2);padding:3px 8px;font-size:0.72rem;cursor:pointer" 
+        onmouseover="this.style.background='var(--red)';this.style.color='#fff'"
+        onmouseout="this.style.background='transparent';this.style.color='var(--text2)'">ลบ</button>
+    </div>`
+  ).join('');
+}
+
+// =========================================================
+// EXPORT
+// =========================================================
+function exportJSON() {
+  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='duty-roster.json';a.click();
+}
+function exportCSV() {
+  let csv='วันที่,บุคลากร,เวร,เวลา,หยุดราชการ\n';
+  Object.keys(S.duties).sort().forEach(dk=>{
+    const d=S.duties[dk]; const h=S.holidays[dk]?'ใช่':'ไม่ใช่';
+    (d.night||[]).forEach(n=>csv+=`${dk},${n},เวรดึก,16:30-08:30,${h}\n`);
+    (d.day||[]).forEach(n=>csv+=`${dk},${n},เวรเช้า,08:30-16:30,${h}\n`);
+  });
+  const b=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='duty-roster.csv';a.click();
+}
+
+// =========================================================
+// CLOSE MODALS ON BG CLICK
+// =========================================================
+document.getElementById('dayModal').addEventListener('click',e=>{ if(e.target===document.getElementById('dayModal')) closeDayModal(); });
+document.getElementById('addStaffModal').addEventListener('click',e=>{ if(e.target===document.getElementById('addStaffModal')) closeAddStaffModal(); });
+document.getElementById('loginOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('loginOverlay')) cancelLogin(); });
+
+// =========================================================
+// BOOTSTRAP
+// =========================================================
+load();
+if(S.currentUser && S.admins.find(a=>a.user===S.currentUser)) isAdmin=true;
+initMonthlySelects();
+applyAdminUI();
+renderAll();
+
+// set default history month
+const nowD=new Date();
+document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}`;
+</script>
+</body>
+</html>
