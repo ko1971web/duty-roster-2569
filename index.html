@@ -1228,12 +1228,30 @@ renderAll();
 const nowD=new Date();
 document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}`;
 <script type="module">
- <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
   import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-  // 1. 👇 นำ firebaseConfig ของคุณมาวางตรงนี้ 👇
+  // ==========================================
+  // 1. ผูกปุ่มเข้ากับระบบก่อนเลย (กันโค้ดฐานข้อมูลพังแล้วกดอะไรไม่ได้)
+  // ==========================================
+  window.switchTab = (tabId, btn) => {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    if(tabId === 'calendar' && typeof renderCalendar === 'function') renderCalendar();
+  };
+  
+  window.openLoginOverlay = () => document.getElementById('loginOverlay').classList.add('show');
+  window.cancelLogin = () => document.getElementById('loginOverlay').classList.remove('show');
+  window.openAddStaffModal = () => document.getElementById('addStaffModal').classList.add('show');
+  window.closeAddStaffModal = () => document.getElementById('addStaffModal').classList.remove('show');
+  window.closeDutyModal = () => document.getElementById('dutyModal').classList.remove('show');
+
+  // ==========================================
+  // 2. 👇 นำ firebaseConfig ของคุณมาวางตรงนี้ 👇
+  // ==========================================
   const firebaseConfig = {
   apiKey: "AIzaSyDtUJ-yR7MdMsqC99I25tIeKdRauYvTGIk",
   authDomain: "duty-roster-2569.firebaseapp.com",
@@ -1244,325 +1262,258 @@ document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.
   measurementId: "G-8ZT33Y5YW4"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
+  let app, auth, db;
 
-  // ==========================================
+  try {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+  } catch (error) {
+      console.error("🔥 พังที่การเชื่อมต่อ Firebase:", error);
+      alert("เชื่อมต่อฐานข้อมูลไม่ได้! ลองกด F12 เพื่อดู Error หรือตรวจสอบ firebaseConfig ครับ");
+  }
+
   // ตัวแปร State เก็บข้อมูลส่วนกลาง
-  // ==========================================
   let isAdmin = false;
   let currentMonth = new Date().getMonth();
   let currentYear = new Date().getFullYear();
   let staffList = [];
   let rosterData = [];
-  
-  // ตัวแปรสำหรับ Modal จัดเวร
   let selectedDate = '';
-  let selectedShift = 'night'; // เริ่มต้นที่เวรดึก
-
+  let selectedShift = 'night';
   const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
 
   // ==========================================
-  // ระบบ AUTHENTICATION (เข้าสู่ระบบ)
+  // ส่วนที่เหลือทำงานเฉพาะตอนที่ Firebase เชื่อมต่อผ่าน
   // ==========================================
-  onAuthStateChanged(auth, (user) => {
-    isAdmin = !!user; // ถ้ามี user เป็น true, ไม่มีเป็น false
-    
-    // จัดการ UI ตามสิทธิ์
-    document.getElementById('userBadge').style.display = isAdmin ? 'flex' : 'none';
-    if(isAdmin) document.getElementById('navUser').innerText = user.email.split('@')[0];
-    document.getElementById('btnLogout').style.display = isAdmin ? 'inline-block' : 'none';
-    document.getElementById('btnEditMode').style.display = isAdmin ? 'none' : 'inline-block';
-    document.getElementById('calReadonlyBanner').style.display = isAdmin ? 'none' : 'flex';
-    document.getElementById('btnAddStaff').style.display = isAdmin ? 'inline-block' : 'none';
-    
-    // ซ่อน Modal Login ถ้าล็อกอินผ่าน
-    if(isAdmin) document.getElementById('loginOverlay').classList.remove('show');
-    
-    renderCalendar(); // โหลดปฏิทินใหม่เพื่ออัปเดตสิทธิ์การคลิก
-  });
+  if (auth && db) {
+      onAuthStateChanged(auth, (user) => {
+        isAdmin = !!user;
+        document.getElementById('userBadge').style.display = isAdmin ? 'flex' : 'none';
+        if(isAdmin) document.getElementById('navUser').innerText = user.email.split('@')[0];
+        document.getElementById('btnLogout').style.display = isAdmin ? 'inline-block' : 'none';
+        document.getElementById('btnEditMode').style.display = isAdmin ? 'none' : 'inline-block';
+        document.getElementById('calReadonlyBanner').style.display = isAdmin ? 'none' : 'flex';
+        document.getElementById('btnAddStaff').style.display = isAdmin ? 'inline-block' : 'none';
+        if(isAdmin) document.getElementById('loginOverlay').classList.remove('show');
+        renderCalendar();
+      });
 
-  window.openLoginOverlay = () => document.getElementById('loginOverlay').classList.add('show');
-  window.cancelLogin = () => document.getElementById('loginOverlay').classList.remove('show');
+      window.doLogin = async () => {
+        const user = document.getElementById('loginUser').value;
+        const pass = document.getElementById('loginPass').value;
+        const errDiv = document.getElementById('loginErr');
+        try {
+          await signInWithEmailAndPassword(auth, user + '@admin.com', pass);
+          errDiv.style.display = 'none';
+          document.getElementById('loginUser').value = '';
+          document.getElementById('loginPass').value = '';
+        } catch (error) {
+          errDiv.style.display = 'block';
+          errDiv.innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        }
+      };
 
-  window.doLogin = async () => {
-    const user = document.getElementById('loginUser').value;
-    const pass = document.getElementById('loginPass').value;
-    const errDiv = document.getElementById('loginErr');
-    try {
-      // แอบเติม @admin.com เพื่อให้ใช้ระบบ Email/Password ของ Firebase ได้
-      await signInWithEmailAndPassword(auth, user + '@admin.com', pass);
-      errDiv.style.display = 'none';
-      document.getElementById('loginUser').value = '';
-      document.getElementById('loginPass').value = '';
-    } catch (error) {
-      errDiv.style.display = 'block';
-      errDiv.innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
-    }
-  };
+      window.doLogout = async () => await signOut(auth);
 
-  window.doLogout = async () => await signOut(auth);
+      onSnapshot(collection(db, "staff"), (snapshot) => {
+        staffList = [];
+        const staffGrid = document.getElementById('staffGrid');
+        const staffSelect = document.getElementById('staffSelect');
+        if(!staffGrid) return;
+        
+        staffGrid.innerHTML = '';
+        if(staffSelect) staffSelect.innerHTML = '<option value="">-- เลือกบุคลากร --</option>';
 
-  // ==========================================
-  // ระบบ UI พื้นฐาน
-  // ==========================================
-  window.switchTab = (tabId, btn) => {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + tabId).classList.add('active');
-    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-    
-    if(tabId === 'calendar') renderCalendar();
-  };
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          staffList.push({ id: docSnap.id, ...data });
+          const shortName = data.name.substring(0, 2);
+          staffGrid.innerHTML += `
+            <div class="s-card">
+              <button class="btn-del-s" onclick="deleteStaff('${docSnap.id}')" ${!isAdmin ? 'style="display:none"' : ''}>🗑️</button>
+              <div class="s-avatar" style="background:rgba(0,212,255,0.1);color:var(--accent)">${shortName}</div>
+              <div class="s-name">${data.name}</div>
+              <div class="s-role">${data.role || '-'}</div>
+            </div>
+          `;
+          if(staffSelect) staffSelect.innerHTML += `<option value="${docSnap.id}">${data.name}</option>`;
+        });
+        document.getElementById('stTotal').innerText = staffList.length;
+      });
 
-  // ==========================================
-  // ดึงข้อมูลบุคลากรแบบ Real-time
-  // ==========================================
-  onSnapshot(collection(db, "staff"), (snapshot) => {
-    staffList = [];
-    const staffGrid = document.getElementById('staffGrid');
-    const staffSelect = document.getElementById('staffSelect');
-    const histStaff = document.getElementById('histStaff');
-    
-    staffGrid.innerHTML = '';
-    staffSelect.innerHTML = '<option value="">-- เลือกบุคลากร --</option>';
-    histStaff.innerHTML = '<option value="">-- เลือกบุคลากร --</option>';
+      window.saveNewStaff = async () => {
+        if (!isAdmin) return;
+        const name = document.getElementById('newStaffName').value;
+        const role = document.getElementById('newStaffRole').value;
+        if (!name) return alert('กรุณากรอกชื่อ-นามสกุล');
+        try {
+          await addDoc(collection(db, "staff"), { name, role });
+          document.getElementById('newStaffName').value = '';
+          document.getElementById('newStaffRole').value = '';
+          closeAddStaffModal();
+        } catch (e) { console.error(e); }
+      };
 
-    snapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      staffList.push({ id: docSnap.id, ...data });
+      window.deleteStaff = async (id) => {
+        if (!isAdmin) return;
+        if (confirm('ยืนยันการลบบุคลากร?')) await deleteDoc(doc(db, "staff", id));
+      };
 
-      const shortName = data.name.substring(0, 2);
-      staffGrid.innerHTML += `
-        <div class="s-card">
-          <button class="btn-del-s" onclick="deleteStaff('${docSnap.id}')" ${!isAdmin ? 'style="display:none"' : ''}>🗑️</button>
-          <div class="s-avatar" style="background:rgba(0,212,255,0.1);color:var(--accent)">${shortName}</div>
-          <div class="s-name">${data.name}</div>
-          <div class="s-role">${data.role || '-'}</div>
-        </div>
-      `;
+      onSnapshot(collection(db, "roster"), (snapshot) => {
+        rosterData = [];
+        snapshot.forEach((docSnap) => rosterData.push({ id: docSnap.id, ...docSnap.data() }));
+        updateDashboard();
+        renderCalendar();
+        if(document.getElementById('dutyModal').classList.contains('show')) renderDutyModalList();
+      });
 
-      staffSelect.innerHTML += `<option value="${docSnap.id}">${data.name}</option>`;
-      histStaff.innerHTML += `<option value="${docSnap.id}">${data.name}</option>`;
-    });
+      window.changeCalMonth = (dir) => {
+        currentMonth += dir;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        renderCalendar();
+      };
 
-    document.getElementById('stTotal').innerText = staffList.length;
-  });
+      window.renderCalendar = function() {
+        const monthLabel = document.getElementById('calMonthLabel');
+        const grid = document.getElementById('calGrid');
+        if(!monthLabel || !grid) return;
 
-  window.openAddStaffModal = () => document.getElementById('addStaffModal').classList.add('show');
-  window.closeAddStaffModal = () => document.getElementById('addStaffModal').classList.remove('show');
+        monthLabel.innerText = `${monthNames[currentMonth]} ${currentYear + 543}`;
+        const headers = Array.from(grid.querySelectorAll('.cal-hdr'));
+        grid.innerHTML = '';
+        headers.forEach(h => grid.appendChild(h));
 
-  window.saveNewStaff = async () => {
-    if (!isAdmin) return;
-    const name = document.getElementById('newStaffName').value;
-    const role = document.getElementById('newStaffRole').value;
-    if (!name) return alert('กรุณากรอกชื่อ-นามสกุล');
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+        let startDayOffset = firstDay === 0 ? 6 : firstDay - 1;
 
-    try {
-      await addDoc(collection(db, "staff"), { name, role });
-      document.getElementById('newStaffName').value = '';
-      document.getElementById('newStaffRole').value = '';
-      closeAddStaffModal();
-    } catch (e) { console.error(e); }
-  };
+        for (let i = 0; i < startDayOffset; i++) grid.innerHTML += `<div class="cal-day empty"></div>`;
 
-  window.deleteStaff = async (id) => {
-    if (!isAdmin) return;
-    if (confirm('ยืนยันการลบบุคลากร?')) await deleteDoc(doc(db, "staff", id));
-  };
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+          const isToday = today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear;
+          const cellDate = new Date(currentYear, currentMonth, day);
+          const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6;
+          const dateString = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          
+          let classes = ['cal-day'];
+          if (isToday) classes.push('today');
+          if (isWeekend) classes.push('weekend');
+          if (!isAdmin) classes.push('view-only');
 
-  // ==========================================
-  // ดึงข้อมูลตารางเวรแบบ Real-time
-  // ==========================================
-  onSnapshot(collection(db, "roster"), (snapshot) => {
-    rosterData = [];
-    snapshot.forEach((docSnap) => rosterData.push({ id: docSnap.id, ...docSnap.data() }));
-    
-    updateDashboard();
-    renderCalendar();
-    
-    // ถ้า Modal เปิดอยู่ ให้อัปเดตข้อมูลข้างในด้วย
-    if(document.getElementById('dutyModal').classList.contains('show')) {
+          const dayDuties = rosterData.filter(r => r.date === dateString);
+          let dutyHtml = '';
+          dayDuties.forEach(r => {
+              const chipClass = r.shift === 'day' ? 'name-chip day-chip' : 'name-chip';
+              dutyHtml += `<div class="${chipClass}">${r.staffName}</div>`;
+          });
+
+          grid.innerHTML += `
+            <div class="${classes.join(' ')}" onclick="openDutyModal('${dateString}')">
+              <div class="day-num-wrap"><div class="day-num">${day}</div></div>
+              <div class="shift-section">${dutyHtml}</div>
+              ${isAdmin ? `<div class="edit-hint">คลิกเพื่อแก้ไข</div>` : ''}
+            </div>
+          `;
+        }
+      }
+
+      function updateDashboard() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const currentMonthStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+        const todayDuty = rosterData.filter(r => r.date === todayStr);
+        const monthDuty = rosterData.filter(r => r.date.startsWith(currentMonthStr));
+        
+        if(document.getElementById('stToday')) document.getElementById('stToday').innerText = todayDuty.length;
+        if(document.getElementById('stMonth')) document.getElementById('stMonth').innerText = monthDuty.length;
+        
+        const todayCards = document.getElementById('todayCards');
+        if(todayCards) {
+            todayCards.innerHTML = '';
+            if(todayDuty.length === 0) {
+                todayCards.innerHTML = '<div class="empty-msg">ไม่มีผู้ปฏิบัติงานในวันนี้</div>';
+            } else {
+                todayDuty.forEach(r => {
+                    const shiftName = r.shift === 'night' ? 'เวรดึก' : 'เวรเช้า';
+                    const shortName = r.staffName.substring(0, 2);
+                    todayCards.innerHTML += `
+                      <div class="duty-person-card">
+                        <div class="person-avatar" style="background:var(--surface3);color:var(--text)">${shortName}</div>
+                        <div>
+                          <div class="person-name">${r.staffName}</div>
+                          <div class="person-shift">${shiftName}</div>
+                        </div>
+                      </div>
+                    `;
+                });
+            }
+        }
+        if(document.getElementById('lastSync')) document.getElementById('lastSync').innerText = `อัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
+      }
+
+      window.openDutyModal = (dateStr) => {
+        if (!isAdmin) return;
+        selectedDate = dateStr;
+        document.getElementById('dutyModal').classList.add('show');
+        const d = new Date(dateStr);
+        document.getElementById('dutyModalDate').innerText = `วันที่จัดการ: ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear() + 543}`;
         renderDutyModalList();
-    }
-  });
+      };
 
-  function updateDashboard() {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const currentMonthStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
-    
-    // คำนวณสถิติ
-    const todayDuty = rosterData.filter(r => r.date === todayStr);
-    const monthDuty = rosterData.filter(r => r.date.startsWith(currentMonthStr));
-    
-    document.getElementById('stToday').innerText = todayDuty.length;
-    document.getElementById('stMonth').innerText = monthDuty.length;
-    
-    // อัปเดตรายชื่อคนเข้าเวรวันนี้ (หน้า Dashboard)
-    const todayCards = document.getElementById('todayCards');
-    todayCards.innerHTML = '';
-    if(todayDuty.length === 0) {
-        todayCards.innerHTML = '<div class="empty-msg">ไม่มีผู้ปฏิบัติงานในวันนี้</div>';
-    } else {
-        todayDuty.forEach(r => {
-            const shiftName = r.shift === 'night' ? 'เวรดึก' : 'เวรเช้า';
-            const shortName = r.staffName.substring(0, 2);
-            todayCards.innerHTML += `
-              <div class="duty-person-card">
-                <div class="person-avatar" style="background:var(--surface3);color:var(--text)">${shortName}</div>
-                <div>
-                  <div class="person-name">${r.staffName}</div>
-                  <div class="person-shift">${shiftName}</div>
+      window.switchShiftTab = (shift) => {
+        selectedShift = shift;
+        document.getElementById('tabNight').classList.toggle('sn-active', shift === 'night');
+        document.getElementById('tabDay').classList.toggle('sd-active', shift === 'day');
+        document.getElementById('shiftTimeInfo').innerText = shift === 'night' ? '16:30 - 08:30 น. (วันถัดไป)' : '08:30 - 16:30 น.';
+        renderDutyModalList();
+      };
+
+      window.renderDutyModalList = function() {
+        const list = document.getElementById('staffInShiftList');
+        if(!list) return;
+        list.innerHTML = '';
+        const shifts = rosterData.filter(r => r.date === selectedDate && r.shift === selectedShift);
+        
+        if(shifts.length === 0) {
+            list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:0.8rem;padding:10px;">ยังไม่มีผู้ปฏิบัติงานในกะนี้</div>';
+            return;
+        }
+
+        shifts.forEach(s => {
+            const badgeClass = selectedShift === 'night' ? 'night-badge' : 'day-badge';
+            const badgeText = selectedShift === 'night' ? 'เวรดึก' : 'เวรเช้า';
+            list.innerHTML += `
+                <div class="staff-row">
+                    <div class="staff-row-name">${s.staffName} <span class="staff-row-badge ${badgeClass}">${badgeText}</span></div>
+                    <button class="btn-rm" onclick="removeStaffFromShift('${s.id}')">ลบออก</button>
                 </div>
-              </div>
             `;
         });
-    }
+      }
 
-    // อัปเดตเวลา Sync ล่าสุด
-    document.getElementById('lastSync').innerText = `อัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`;
+      window.addStaffToShift = async () => {
+        if (!isAdmin) return;
+        const staffId = document.getElementById('staffSelect').value;
+        if (!staffId) return alert('กรุณาเลือกบุคลากร');
+        const staff = staffList.find(s => s.id === staffId);
+        try {
+          await addDoc(collection(db, "roster"), {
+            date: selectedDate, shift: selectedShift, staffId: staffId, staffName: staff.name
+          });
+          document.getElementById('staffSelect').value = ''; 
+        } catch (e) { console.error(e); }
+      };
+
+      window.removeStaffFromShift = async (id) => {
+        if (!isAdmin) return;
+        await deleteDoc(doc(db, "roster", id));
+      };
+
+      // เริ่มวาดปฏิทินครั้งแรก
+      renderCalendar();
   }
-
-  // ==========================================
-  // ระบบปฏิทิน (CALENDAR)
-  // ==========================================
-  window.changeCalMonth = (dir) => {
-    currentMonth += dir;
-    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    renderCalendar();
-  };
-
-  function renderCalendar() {
-    document.getElementById('calMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear + 543}`;
-    const grid = document.getElementById('calGrid');
-    
-    const headers = Array.from(grid.querySelectorAll('.cal-hdr'));
-    grid.innerHTML = '';
-    headers.forEach(h => grid.appendChild(h));
-
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    let startDayOffset = firstDay === 0 ? 6 : firstDay - 1;
-
-    for (let i = 0; i < startDayOffset; i++) {
-      grid.innerHTML += `<div class="cal-day empty"></div>`;
-    }
-
-    const today = new Date();
-    for (let day = 1; day <= daysInMonth; day++) {
-      const isToday = today.getDate() === day && today.getMonth() === currentMonth && today.getFullYear() === currentYear;
-      const cellDate = new Date(currentYear, currentMonth, day);
-      const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6;
-      
-      const dateString = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-      
-      let classes = ['cal-day'];
-      if (isToday) classes.push('today');
-      if (isWeekend) classes.push('weekend');
-      if (!isAdmin) classes.push('view-only');
-
-      // ดึงข้อมูลเวรของวันนี้
-      const dayDuties = rosterData.filter(r => r.date === dateString);
-      let dutyHtml = '';
-      dayDuties.forEach(r => {
-          const chipClass = r.shift === 'day' ? 'name-chip day-chip' : 'name-chip';
-          dutyHtml += `<div class="${chipClass}">${r.staffName}</div>`;
-      });
-
-      grid.innerHTML += `
-        <div class="${classes.join(' ')}" onclick="openDutyModal('${dateString}')">
-          <div class="day-num-wrap">
-            <div class="day-num">${day}</div>
-          </div>
-          <div class="shift-section">${dutyHtml}</div>
-          ${isAdmin ? `<div class="edit-hint">คลิกเพื่อแก้ไข</div>` : ''}
-        </div>
-      `;
-    }
-  }
-
-  // ==========================================
-  // ระบบจัดการเวรใน Modal
-  // ==========================================
-  window.openDutyModal = (dateStr) => {
-    if (!isAdmin) return;
-    selectedDate = dateStr;
-    document.getElementById('dutyModal').classList.add('show');
-    
-    // แปลงวันที่เป็นภาษาไทยสวยๆ
-    const d = new Date(dateStr);
-    document.getElementById('dutyModalDate').innerText = `วันที่จัดการ: ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear() + 543}`;
-    
-    renderDutyModalList();
-  };
-
-  window.closeDutyModal = () => document.getElementById('dutyModal').classList.remove('show');
-
-  window.switchShiftTab = (shift) => {
-    selectedShift = shift;
-    document.getElementById('tabNight').classList.toggle('sn-active', shift === 'night');
-    document.getElementById('tabDay').classList.toggle('sd-active', shift === 'day');
-    document.getElementById('shiftTimeInfo').innerText = shift === 'night' ? '16:30 - 08:30 น. (วันถัดไป)' : '08:30 - 16:30 น.';
-    renderDutyModalList();
-  };
-
-  function renderDutyModalList() {
-    const list = document.getElementById('staffInShiftList');
-    list.innerHTML = '';
-    
-    const shifts = rosterData.filter(r => r.date === selectedDate && r.shift === selectedShift);
-    
-    if(shifts.length === 0) {
-        list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:0.8rem;padding:10px;">ยังไม่มีผู้ปฏิบัติงานในกะนี้</div>';
-        return;
-    }
-
-    shifts.forEach(s => {
-        const badgeClass = selectedShift === 'night' ? 'night-badge' : 'day-badge';
-        const badgeText = selectedShift === 'night' ? 'เวรดึก' : 'เวรเช้า';
-        list.innerHTML += `
-            <div class="staff-row">
-                <div class="staff-row-name">${s.staffName} <span class="staff-row-badge ${badgeClass}">${badgeText}</span></div>
-                <button class="btn-rm" onclick="removeStaffFromShift('${s.id}')">ลบออก</button>
-            </div>
-        `;
-    });
-  }
-
-  window.addStaffToShift = async () => {
-    if (!isAdmin) return;
-    const staffId = document.getElementById('staffSelect').value;
-    if (!staffId) return alert('กรุณาเลือกบุคลากร');
-    
-    const staff = staffList.find(s => s.id === staffId);
-    
-    try {
-      await addDoc(collection(db, "roster"), {
-        date: selectedDate,
-        shift: selectedShift,
-        staffId: staffId,
-        staffName: staff.name
-      });
-      document.getElementById('staffSelect').value = ''; // รีเซ็ต dropdown
-    } catch (e) { console.error("Error adding shift:", e); }
-  };
-
-  window.removeStaffFromShift = async (id) => {
-    if (!isAdmin) return;
-    await deleteDoc(doc(db, "roster", id));
-  };
-
-  // ==========================================
-  // Mock Functions สำหรับ UI อื่นๆ ให้กดแล้วไม่ Error
-  // ==========================================
-  window.tlChangeMonth = (dir) => alert("ฟังก์ชันตารางแนวนอนกำลังพัฒนาเพิ่มเติมครับ");
-  window.renderMonthlyTable = () => alert("ฟังก์ชันตารางรายเดือนกำลังพัฒนาเพิ่มเติมครับ");
-  window.renderHistory = () => alert("ฟังก์ชันดูประวัติกำลังพัฒนาเพิ่มเติมครับ");
-  window.clearHistoryFilter = () => document.getElementById('histStaff').value = '';
-  window.toggleHoliday = () => console.log("Toggle Holiday Clicked");
-
 </script>
 </body>
 </html>
