@@ -481,7 +481,7 @@ main{max-width:1440px;margin:0 auto;padding:22px;position:relative;z-index:1}
 </main>
 
 <!-- DAY EDIT MODAL -->
-<div class="modal-bg" id="dutyModal">
+<div class="modal-bg" id="dayModal">
   <div class="modal">
     <div class="modal-hdr">
       <div class="modal-title" id="dayModalTitle"></div>
@@ -504,6 +504,7 @@ main{max-width:1440px;margin:0 auto;padding:22px;position:relative;z-index:1}
       <select id="addStaffSel">
         <option value="">-- เลือกบุคลากร --</option>
       </select>
+      <select id="staffSelect" class="...">
       <button class="btn-add-staff" onclick="addStaffToShift()">+ เพิ่ม</button>
     </div>
   </div>
@@ -1211,7 +1212,7 @@ function exportCSV() {
 // =========================================================
 // CLOSE MODALS ON BG CLICK
 // =========================================================
-document.getElementById('dutyModal').addEventListener('click',e=>{ if(e.target===document.getElementById('dutyModal')) closeDutyModal(); });
+document.getElementById('dayModal').addEventListener('click',e=>{ if(e.target===document.getElementById('dayModal')) closeDayModal(); });
 document.getElementById('addStaffModal').addEventListener('click',e=>{ if(e.target===document.getElementById('addStaffModal')) closeAddStaffModal(); });
 document.getElementById('loginOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('loginOverlay')) cancelLogin(); });
 
