@@ -492,17 +492,16 @@ main{max-width:1440px;margin:0 auto;padding:22px;position:relative;z-index:1}
         <input type="checkbox" id="holToggle" onchange="toggleHoliday()">
         <span class="toggle-sl"></span>
       </label>
-      <span class="toggle-lbl">🏖️ วันหยุดราชการ (เปิดเพื่อเพิ่มเวรได้ทุกช่วง)</span>
+      <span class="toggle-lbl">🏖️ วันหยุดราชการ</span>
     </div>
     <div class="shift-tabs">
       <div class="shift-tab sn-active" id="stNight" onclick="selShift('night')">🌙 เวรดึก</div>
       <div class="shift-tab" id="stDay" onclick="selShift('day')">☀️ เวรเช้า</div>
     </div>
-    <div class="shift-time-info" id="shiftTimeInfo">🕐 16:30 น. — 08:30 น. วันรุ่งขึ้น</div>
+    <div class="shift-time-info" id="shiftTimeInfo">🕐 16:30 น. — 08:30 น.</div>
     <div class="staff-in-shift" id="shiftStaffList"></div>
     <div class="add-row">
-      <select id="staffSelect">
-        <option value="">-- เลือกบุคลากร --</option>
+      <select id="addStaffSel"> <option value="">-- เลือกบุคลากร --</option>
       </select>
       <button class="btn-add-staff" onclick="addStaffToShift()">+ เพิ่ม</button>
     </div>
@@ -1211,7 +1210,7 @@ function exportCSV() {
 // =========================================================
 // CLOSE MODALS ON BG CLICK
 // =========================================================
-document.getElementById('dutyModal').addEventListener('click',e=>{ if(e.target===document.getElementById('dutyModal')) closeDutyModal(); });
+document.getElementById('dutyModal').addEventListener('click',e=>{ if(e.target==document.getElementById('dutyModal')) closeDutyModal(); });
 document.getElementById('addStaffModal').addEventListener('click',e=>{ if(e.target===document.getElementById('addStaffModal')) closeAddStaffModal(); });
 document.getElementById('loginOverlay').addEventListener('click',e=>{ if(e.target===document.getElementById('loginOverlay')) cancelLogin(); });
 
@@ -1460,7 +1459,7 @@ document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.
         document.getElementById('dutyModal').classList.add('show');
         const d = new Date(dateStr);
         // แก้จาก dutyModalDate เป็น dutyModalTitle ให้ตรงกับ HTML
-        document.getElementById('dutyModalTitle').innerText = `วันที่จัดการ: ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
+        document.getElementById('dutyModalTitle').innerText = `วันที่จัดการ: ${d.getDate()} ...`;
         renderDutyModalList();
       };
 
@@ -1498,26 +1497,17 @@ document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.
       }
 
       window.addStaffToShift = async () => {
-        if (!isAdmin) return;
-        // แก้จาก staffSelect เป็น addStaffSel ตาม HTML
-        const staffId = document.getElementById('addStaffSel').value;
-        if (!staffId) return alert('กรุณาเลือกบุคลากร');
-        
-        // ค้นหาชื่อจาก S.staffList (ตาม STATE ของคุณ)
-        const staff = S.staffList.find(s => s.id === staffId);
-        if (!staff) return;
+  const staffId = document.getElementById('addStaffSel').value; // ดึงจาก ID นี้
+  if (!staffId) return alert('กรุณาเลือกบุคลากร');
 
-        try {
-          await addDoc(collection(db, "roster"), {
-            date: selDate, 
-            shift: selShiftMode, 
-            staffId: staffId, 
-            staffName: staff.name
-          });
-          // ล้างค่าในช่องเลือก
-          document.getElementById('addStaffSel').value = ''; 
-        } catch (e) { console.error(e); }
-      };
+  const staff = S.staffList.find(s => s.id === staffId);
+  try {
+    await addDoc(collection(db, "roster"), {
+      date: selDate, shift: selShiftMode, staffId: staffId, staffName: staff.name
+    });
+    document.getElementById('addStaffSel').value = ''; // ล้างค่าใน ID เดียวกัน
+  } catch (e) { console.error(e); }
+};
 
       window.removeStaffFromShift = async (id) => {
         if (!isAdmin) return;
