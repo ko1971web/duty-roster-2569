@@ -1227,6 +1227,7 @@ renderAll();
 // set default history month
 const nowD=new Date();
 document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.getMonth()+1).padStart(2,'0')}`;
+ </script> 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
