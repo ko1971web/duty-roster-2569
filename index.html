@@ -1456,26 +1456,29 @@ document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.
 
       window.openDutyModal = (dateStr) => {
         if (!isAdmin) return;
-        selectedDate = dateStr;
+        selDate = dateStr; // เปลี่ยนจาก selectedDate เป็น selDate ตาม STATE ของคุณ
         document.getElementById('dutyModal').classList.add('show');
         const d = new Date(dateStr);
-        document.getElementById('dutyModalDate').innerText = `วันที่จัดการ: ${d.getDate()} ${monthNames[d.getMonth()]} ${d.getFullYear() + 543}`;
+        // แก้จาก dutyModalDate เป็น dutyModalTitle ให้ตรงกับ HTML
+        document.getElementById('dutyModalTitle').innerText = `วันที่จัดการ: ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear() + 543}`;
         renderDutyModalList();
       };
 
-      window.switchShiftTab = (shift) => {
-        selectedShift = shift;
-        document.getElementById('tabNight').classList.toggle('sn-active', shift === 'night');
-        document.getElementById('tabDay').classList.toggle('sd-active', shift === 'day');
+      window.selShift = (shift) => {
+        selShiftMode = shift; // เปลี่ยนให้ตรงกับ STATE
+        // แก้ ID ให้ตรงกับ stNight และ stDay ใน HTML ของคุณ
+        document.getElementById('stNight').classList.toggle('sn-active', shift === 'night');
+        document.getElementById('stDay').classList.toggle('sn-active', shift === 'day');
         document.getElementById('shiftTimeInfo').innerText = shift === 'night' ? '16:30 - 08:30 น. (วันถัดไป)' : '08:30 - 16:30 น.';
         renderDutyModalList();
       };
 
       window.renderDutyModalList = function() {
-        const list = document.getElementById('staffInShiftList');
+        // แก้จาก staffInShiftList เป็น shiftStaffList ตาม HTML
+        const list = document.getElementById('shiftStaffList');
         if(!list) return;
         list.innerHTML = '';
-        const shifts = rosterData.filter(r => r.date === selectedDate && r.shift === selectedShift);
+        const shifts = rosterData.filter(r => r.date === selDate && r.shift === selShiftMode);
         
         if(shifts.length === 0) {
             list.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:0.8rem;padding:10px;">ยังไม่มีผู้ปฏิบัติงานในกะนี้</div>';
@@ -1483,8 +1486,8 @@ document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.
         }
 
         shifts.forEach(s => {
-            const badgeClass = selectedShift === 'night' ? 'night-badge' : 'day-badge';
-            const badgeText = selectedShift === 'night' ? 'เวรดึก' : 'เวรเช้า';
+            const badgeClass = selShiftMode === 'night' ? 'night-badge' : 'day-badge';
+            const badgeText = selShiftMode === 'night' ? 'เวรดึก' : 'เวรเช้า';
             list.innerHTML += `
                 <div class="staff-row">
                     <div class="staff-row-name">${s.staffName} <span class="staff-row-badge ${badgeClass}">${badgeText}</span></div>
@@ -1496,14 +1499,23 @@ document.getElementById('histMonth').value=`${nowD.getFullYear()}-${String(nowD.
 
       window.addStaffToShift = async () => {
         if (!isAdmin) return;
-        const staffId = document.getElementById('staffSelect').value;
+        // แก้จาก staffSelect เป็น addStaffSel ตาม HTML
+        const staffId = document.getElementById('addStaffSel').value;
         if (!staffId) return alert('กรุณาเลือกบุคลากร');
-        const staff = staffList.find(s => s.id === staffId);
+        
+        // ค้นหาชื่อจาก S.staffList (ตาม STATE ของคุณ)
+        const staff = S.staffList.find(s => s.id === staffId);
+        if (!staff) return;
+
         try {
           await addDoc(collection(db, "roster"), {
-            date: selectedDate, shift: selectedShift, staffId: staffId, staffName: staff.name
+            date: selDate, 
+            shift: selShiftMode, 
+            staffId: staffId, 
+            staffName: staff.name
           });
-          document.getElementById('staffSelect').value = ''; 
+          // ล้างค่าในช่องเลือก
+          document.getElementById('addStaffSel').value = ''; 
         } catch (e) { console.error(e); }
       };
 
