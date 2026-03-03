@@ -501,7 +501,7 @@ main{max-width:1440px;margin:0 auto;padding:22px;position:relative;z-index:1}
     <div class="shift-time-info" id="shiftTimeInfo">🕐 16:30 น. — 08:30 น. วันรุ่งขึ้น</div>
     <div class="staff-in-shift" id="shiftStaffList"></div>
     <div class="add-row">
-      <select id="addStaffSel">
+      <select id="staffSelect">
         <option value="">-- เลือกบุคลากร --</option>
       </select>
       <button class="btn-add-staff" onclick="addStaffToShift()">+ เพิ่ม</button>
@@ -973,13 +973,13 @@ function renderShiftList() {
 }
 
 function addStaffToShift() {
-  const name = document.getElementById('addStaffSel').value;
+  const name = document.getElementById('staffSelect').value;
   if(!name) return;
   if(!S.duties[selDate]) S.duties[selDate]={night:[],day:[]};
   if(!S.duties[selDate][selShiftMode]) S.duties[selDate][selShiftMode]=[];
   if(S.duties[selDate][selShiftMode].includes(name)){ alert('บุคลากรนี้อยู่ในเวรนี้แล้ว'); return; }
   S.duties[selDate][selShiftMode].push(name);
-  document.getElementById('addStaffSel').value='';
+  document.getElementById('staffSelect').value='';
   save(); renderShiftList(); renderCalendar(); renderDashboard(); renderTimeline();
 }
 
@@ -1159,7 +1159,7 @@ function renderStaffGrid() {
 function populateDropdowns() {
   const opts='<option value="">-- เลือกบุคลากร --</option>'+
     S.staffList.map(s=>`<option value="${s.name}">${s.name}</option>`).join('');
-  document.getElementById('addStaffSel').innerHTML=opts;
+  document.getElementById('staffSelect').innerHTML=opts;
   document.getElementById('histStaff').innerHTML=opts;
 }
 
